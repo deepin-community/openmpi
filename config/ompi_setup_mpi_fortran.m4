@@ -10,7 +10,7 @@ dnl Copyright (c) 2004-2007 High Performance Computing Center Stuttgart,
 dnl                         University of Stuttgart.  All rights reserved.
 dnl Copyright (c) 2004-2005 The Regents of the University of California.
 dnl                         All rights reserved.
-dnl Copyright (c) 2006-2017 Cisco Systems, Inc.  All rights reserved
+dnl Copyright (c) 2006-2022 Cisco Systems, Inc.  All rights reserved
 dnl Copyright (c) 2006-2008 Sun Microsystems, Inc.  All rights reserved.
 dnl Copyright (c) 2006-2007 Los Alamos National Security, LLC.  All rights
 dnl                         reserved.
@@ -18,6 +18,7 @@ dnl Copyright (c) 2009      Oak Ridge National Labs.  All rights reserved.
 dnl Copyright (c) 2014-2020 Research Organization for Information Science
 dnl                         and Technology (RIST).  All rights reserved.
 dnl Copyright (c) 2016      IBM Corporation.  All rights reserved.
+dnl Copyright (c) 2023      Jeffrey M. Squyres.  All rights reserved.
 dnl $COPYRIGHT$
 dnl
 dnl Additional copyrights may follow
@@ -249,6 +250,9 @@ AC_DEFUN([OMPI_SETUP_MPI_FORTRAN],[
     OMPI_FORTRAN_STATUS_SIZE=$num_integers
     AC_MSG_RESULT([$OMPI_FORTRAN_STATUS_SIZE Fortran INTEGERs])
     AC_SUBST(OMPI_FORTRAN_STATUS_SIZE)
+    AC_DEFINE_UNQUOTED([OMPI_FORTRAN_STATUS_SIZE],
+                       [$OMPI_FORTRAN_STATUS_SIZE],
+                       [The number or Fortran INTEGER in MPI Status])
 
     # Setup for the compilers that don't support ignore TKR functionality
     OPAL_UNIQ(OMPI_FORTRAN_IKINDS)
@@ -375,7 +379,7 @@ AC_DEFUN([OMPI_SETUP_MPI_FORTRAN],[
 
     # The mpi_f08 module in this version of Open MPI does not properly
     # handle if sizeof(INTEGER) != sizeof(int) with the mpi_f08
-    # bindings.  As of July 2020, this issue is fixed on master / what
+    # bindings.  As of July 2020, this issue is fixed on main / what
     # will eventually become Open MPI v5.0.x, but the fix causes an
     # ABI break.  Hence, we're not going to fix it here on this
     # release branch.

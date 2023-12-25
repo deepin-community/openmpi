@@ -49,6 +49,13 @@ BEGIN_C_DECLS
 #define SPML_UCX_TRANSP_CNT 1
 #define SPML_UCX_SERVICE_SEG 0
 
+enum {
+    SPML_UCX_STRONG_ORDERING_NONE  = 0, /* don't use strong ordering */
+    SPML_UCX_STRONG_ORDERING_GETNB = 1, /* use non-blocking read to provide ordering */
+    SPML_UCX_STRONG_ORDERING_GET   = 2, /* use blocking read to provide ordering*/
+    SPML_UCX_STRONG_ORDERING_FLUSH = 3  /* flush EP to provide ordering */
+};
+
 /**
  * UCX SPML module
  */
@@ -81,6 +88,7 @@ struct mca_spml_ucx_ctx {
     int                     *put_proc_indexes;
     unsigned                 put_proc_count;
     bool                     synchronized_quiet;
+    int                      strong_sync;
 };
 typedef struct mca_spml_ucx_ctx mca_spml_ucx_ctx_t;
 
@@ -115,7 +123,6 @@ struct mca_spml_ucx {
     mca_spml_ucx_ctx_t       *aux_ctx;
     pthread_spinlock_t       async_lock;
     int                      aux_refcnt;
-    bool                     synchronized_quiet;
     unsigned long            nb_progress_thresh_global;
     unsigned long            nb_put_progress_thresh;
     unsigned long            nb_get_progress_thresh;
@@ -214,9 +221,9 @@ static inline int
 mca_spml_ucx_peer_mkey_get(ucp_peer_t *ucp_peer, int index, spml_ucx_cached_mkey_t **out_rmkey)
 {
     *out_rmkey = NULL;
-    if (OPAL_UNLIKELY((index >= ucp_peer->mkeys_cnt) || (MCA_MEMHEAP_MAX_SEGMENTS <= index) || (0 > index))) {
-        SPML_UCX_ERROR("Failed to get mkey for segment: bad index = %d, MAX = %d, cached mkeys count: %d",
-                        index, MCA_MEMHEAP_MAX_SEGMENTS, ucp_peer->mkeys_cnt);
+    if (OPAL_UNLIKELY((index >= (int)ucp_peer->mkeys_cnt) || (0 > index))) {
+        SPML_UCX_ERROR("Failed to get mkey for segment: bad index = %d, cached mkeys count: %zu",
+                       index, ucp_peer->mkeys_cnt);
         return OSHMEM_ERR_BAD_PARAM;
     }
     *out_rmkey = ucp_peer->mkeys[index];
@@ -295,9 +302,15 @@ static inline int ucx_status_to_oshmem_nb(ucs_status_t status)
 #endif
 }
 
+static inline int mca_spml_ucx_is_strong_ordering(mca_spml_ucx_ctx_t *ctx)
+{
+    return (ctx->strong_sync != SPML_UCX_STRONG_ORDERING_NONE) ||
+           ctx->synchronized_quiet;
+}
+
 static inline void mca_spml_ucx_remote_op_posted(mca_spml_ucx_ctx_t *ctx, int dst)
 {
-    if (OPAL_UNLIKELY(ctx->synchronized_quiet)) {
+    if (OPAL_UNLIKELY(mca_spml_ucx_is_strong_ordering(ctx))) {
         if (!opal_bitmap_is_set_bit(&ctx->put_op_bitmap, dst)) {
             ctx->put_proc_indexes[ctx->put_proc_count++] = dst;
             opal_bitmap_set_bit(&ctx->put_op_bitmap, dst);

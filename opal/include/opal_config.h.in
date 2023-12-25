@@ -340,6 +340,10 @@
    you don't. */
 #undef HAVE_DECL_UCP_EP_FLUSH_NB
 
+/* Define to 1 if you have the declaration of `ucp_ep_flush_nbx', and to 0 if
+   you don't. */
+#undef HAVE_DECL_UCP_EP_FLUSH_NBX
+
 /* Define to 1 if you have the declaration of `ucp_get_nb', and to 0 if you
    don't. */
 #undef HAVE_DECL_UCP_GET_NB
@@ -347,6 +351,10 @@
 /* Define to 1 if you have the declaration of `ucp_get_nbx', and to 0 if you
    don't. */
 #undef HAVE_DECL_UCP_GET_NBX
+
+/* Define to 1 if you have the declaration of `UCP_OP_ATTR_FLAG_MULTI_SEND',
+   and to 0 if you don't. */
+#undef HAVE_DECL_UCP_OP_ATTR_FLAG_MULTI_SEND
 
 /* Define to 1 if you have the declaration of
    `UCP_PARAM_FIELD_ESTIMATED_NUM_PPN', and to 0 if you don't. */
@@ -848,6 +856,9 @@
 /* Define to 1 if you have the <rdma/fabric.h> header file. */
 #undef HAVE_RDMA_FABRIC_H
 
+/* Define to 1 if you have the <rdma/fi_ext.h> header file. */
+#undef HAVE_RDMA_FI_EXT_H
+
 /* Define to 1 if you have the <rdma/rdma_cma.h> header file. */
 #undef HAVE_RDMA_RDMA_CMA_H
 
@@ -958,6 +969,9 @@
 
 /* Define to 1 if `speed_hi' is a member of `struct ethtool_cmd'. */
 #undef HAVE_STRUCT_ETHTOOL_CMD_SPEED_HI
+
+/* Define to 1 if the system has the type `struct fi_ops_mem_monitor'. */
+#undef HAVE_STRUCT_FI_OPS_MEM_MONITOR
 
 /* Define to 1 if `transport_type' is a member of `struct ibv_device'. */
 #undef HAVE_STRUCT_IBV_DEVICE_TRANSPORT_TYPE
@@ -1135,6 +1149,12 @@
 
 /* Define to 1 if you have the <tm_tree.h> header file. */
 #undef HAVE_TM_TREE_H
+
+/* Define to 1 if you have the <ucc/api/ucc.h> header file. */
+#undef HAVE_UCC_API_UCC_H
+
+/* Define to 1 if you have the `ucc_comm_free' function. */
+#undef HAVE_UCC_COMM_FREE
 
 /* Define to 1 if you have the <ucontext.h> header file. */
 #undef HAVE_UCONTEXT_H
@@ -1804,6 +1824,9 @@
 /* Whether fortran symbols have a trailing underscore or not */
 #undef OMPI_FORTRAN_SINGLE_UNDERSCORE
 
+/* The number or Fortran INTEGER in MPI Status */
+#undef OMPI_FORTRAN_STATUS_SIZE
+
 /* Whether we are building support for the "use mpif08" bindings or not */
 #undef OMPI_FORTRAN_USEMPIF08_BINDINGS
 
@@ -2217,26 +2240,8 @@
 /* OMPI architecture string */
 #undef OPAL_ARCH
 
-/* Assembly align directive expects logarithmic value */
-#undef OPAL_ASM_ALIGN_LOG
-
 /* What ARM assembly version to use */
 #undef OPAL_ASM_ARM_VERSION
-
-/* Assembly directive for exporting symbols */
-#undef OPAL_ASM_GLOBAL
-
-/* Assembly prefix for gsym labels */
-#undef OPAL_ASM_GSYM
-
-/* Assembly suffix for labels */
-#undef OPAL_ASM_LABEL_SUFFIX
-
-/* Assembly prefix for lsym labels */
-#undef OPAL_ASM_LSYM
-
-/* Do we need to give a .size directive */
-#undef OPAL_ASM_SIZE
 
 /* Whether we can do 64bit assembly operations or not. Should not be used
    outside of the assembly header files */
@@ -2245,20 +2250,11 @@
 /* Whether 64-bit is supported by the __sync builtin atomics */
 #undef OPAL_ASM_SYNC_HAVE_64BIT
 
-/* Assembly directive for setting text section */
-#undef OPAL_ASM_TEXT
-
-/* How to set function type in .type directive */
-#undef OPAL_ASM_TYPE
-
 /* Architecture type of assembly to use for atomic operations and CMA */
 #undef OPAL_ASSEMBLY_ARCH
 
 /* Whether to use builtin atomics */
 #undef OPAL_ASSEMBLY_BUILTIN
-
-/* Format of assembly file */
-#undef OPAL_ASSEMBLY_FORMAT
 
 /* Whether we have support for RDTSCP instruction */
 #undef OPAL_ASSEMBLY_SUPPORTS_RDTSCP
@@ -2667,9 +2663,6 @@
 /* Minor release number of Open Portable Access Layer */
 #undef OPAL_MINOR_VERSION
 
-/* Whether libfabric supports monitor import */
-#undef OPAL_OFI_IMPORT_MONITOR_SUPPORT
-
 /* check if pci data is available in ofi */
 #undef OPAL_OFI_PCI_DATA_AVAILABLE
 
@@ -2689,9 +2682,6 @@
 /* Log base 2 of the maximum size in bytes of the user virtual address space.
    Set to 0 if MD can bind all of memory. */
 #undef OPAL_PORTALS4_MAX_VA_SIZE
-
-/* Whether r notation is used for ppc registers */
-#undef OPAL_POWERPC_R_REGISTERS
 
 /* Release date of Open Portable Access Layer */
 #undef OPAL_RELEASE_DATE
@@ -2913,6 +2903,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Check if float128 and float32(64,128)_complex dt are available in ucc. */
+#undef UCC_HAVE_COMPLEX_AND_FLOAT128_DT
 
 /* Enable extensions on HP-UX. */
 #ifndef _HPUX_SOURCE

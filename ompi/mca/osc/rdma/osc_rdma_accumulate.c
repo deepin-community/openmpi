@@ -8,6 +8,8 @@
  * Copyright (c) 2019      Triad National Security, LLC. All rights
  *                         reserved.
  * Copyright (c) 2019-2021 Google, LLC. All rights reserved.
+ * Copyright (c) 2021      IBM Corporation.  All rights reserved.
+ * Copyright (c) 2022      Cisco Systems, Inc.  All rights reserved
  * $COPYRIGHT$
  *
  * Additional copyrights may follow
@@ -192,9 +194,9 @@ static int ompi_osc_rdma_fetch_and_op_cas (ompi_osc_rdma_sync_t *sync, const voi
         new_value = old_value;
 
         if (&ompi_mpi_op_replace.op == op) {
-            memcpy ((void *)((intptr_t) &new_value + offset), origin_addr + dt->super.true_lb, extent);
+            memcpy ((void *)((ptrdiff_t) &new_value + offset), (void *)((ptrdiff_t) origin_addr + dt->super.true_lb), extent);
         } else if (&ompi_mpi_op_no_op.op != op) {
-            ompi_op_reduce (op, (void *) origin_addr + dt->super.true_lb, (void*)((intptr_t) &new_value + offset), 1, dt);
+            ompi_op_reduce (op, (void *) ((ptrdiff_t) origin_addr + dt->super.true_lb), (void*)((ptrdiff_t) &new_value + offset), 1, dt);
         }
 
         ret = ompi_osc_rdma_btl_cswap (module, peer->data_endpoint, address, target_handle,
@@ -219,7 +221,7 @@ static int ompi_osc_rdma_acc_single_atomic (ompi_osc_rdma_sync_t *sync, const vo
 {
     ompi_osc_rdma_module_t *module = sync->module;
     int32_t atomic_flags = module->selected_btl->btl_atomic_flags;
-    int ret, btl_op, flags;
+    int btl_op, flags;
     int64_t origin;
 
     if (!(module->selected_btl->btl_flags & MCA_BTL_FLAGS_ATOMIC_OPS)) {
@@ -260,14 +262,14 @@ static inline int ompi_osc_rdma_gacc_amo (ompi_osc_rdma_module_t *module, ompi_o
 {
     const bool use_amo = module->acc_use_amo;
     const size_t dt_size = datatype->super.size;
+    void *result_start = result;
     void *to_free = NULL;
-    uint64_t offset = 0;
     int ret;
 
     OSC_RDMA_VERBOSE(MCA_BASE_VERBOSE_TRACE, "using network atomics for accumulate operation with count %d", count);
 
     if (NULL == result) {
-        to_free = result = malloc (request->len);
+        to_free = result_start = result = malloc (request->len);
         if (OPAL_UNLIKELY(NULL == result)) {
             return OMPI_ERR_OUT_OF_RESOURCE;
        }
@@ -296,6 +298,7 @@ static inline int ompi_osc_rdma_gacc_amo (ompi_osc_rdma_module_t *module, ompi_o
             target_address += dt_size;
             ++i;
         } else if (OPAL_UNLIKELY(OMPI_ERR_NOT_SUPPORTED == ret)) {
+            free(to_free);
             return OMPI_ERR_NOT_SUPPORTED;
         }
     }
@@ -303,7 +306,8 @@ static inline int ompi_osc_rdma_gacc_amo (ompi_osc_rdma_module_t *module, ompi_o
     if (NULL != result_convertor) {
         /* result buffer is not necessarily contiguous. use the opal datatype engine to
          * copy the data over in this case */
-        struct iovec iov = {.iov_base = result, .iov_len = request->len};
+        size_t len = count * dt_size;
+        struct iovec iov = {.iov_base = result_start, .iov_len = len};
         uint32_t iov_count = 1;
         size_t size = request->len;
 
@@ -339,7 +343,7 @@ static inline int ompi_osc_rdma_gacc_contig (ompi_osc_rdma_sync_t *sync, const v
     /* if the datatype is small enough (and the count is 1) then try to directly use the hardware to execute
      * the atomic operation. this should be safe in all cases as either 1) the user has assured us they will
      * never use atomics with count > 1, 2) we have the accumulate lock, or 3) we have an exclusive lock */
-    if (target_datatype->super.size <= 8 && target_count <= module->network_amo_max_count) {
+    if ((target_datatype->super.size <= 8) && (((unsigned long) target_count) <= module->network_amo_max_count)) {
         ret = ompi_osc_rdma_gacc_amo (module, sync, source, result, result_count, result_datatype, result_convertor,
                                       peer, target_address, target_handle, target_count, target_datatype, op, request);
         if (OPAL_LIKELY(OMPI_SUCCESS == ret)) {
@@ -813,14 +817,24 @@ int ompi_osc_rdma_compare_and_swap (const void *origin_addr, const void *compare
         lock_acquired = true;
     }
 
-    /* either we have and exclusive lock (via MPI_Win_lock() or the accumulate lock) or the
-     * user has indicated that they will only use the same op (or same op and no op) for
-     * operations on overlapping memory ranges. that indicates it is safe to go ahead and
-     * use network atomic operations. */
-    ret = ompi_osc_rdma_cas_atomic (sync, origin_addr, compare_addr, result_addr, dt,
-                                    peer, target_address, target_handle, lock_acquired);
-    if (OMPI_SUCCESS == ret) {
-        return OMPI_SUCCESS;
+    /* operate in (shared) memory if there is only a single node
+     * OR if we have an exclusive lock
+     * OR if other processes won't try to use the network either */
+    bool use_shared_mem = module->single_node ||
+                          (ompi_osc_rdma_peer_local_base (peer) &&
+                              (ompi_osc_rdma_peer_is_exclusive (peer) ||
+                                  !module->acc_single_intrinsic));
+
+    if (!use_shared_mem) {
+        /* either we have an exclusive lock (via MPI_Win_lock() or the accumulate lock) or the
+         * user has indicated that they will only use the same op (or same op and no op) for
+         * operations on overlapping memory ranges. that indicates it is safe to go ahead and
+         * use network atomic operations. */
+        ret = ompi_osc_rdma_cas_atomic (sync, origin_addr, compare_addr, result_addr, dt,
+                                        peer, target_address, target_handle, lock_acquired);
+        if (OMPI_SUCCESS == ret) {
+            return OMPI_SUCCESS;
+        }
     }
 
     if (!(lock_acquired || ompi_osc_rdma_peer_is_exclusive (peer))) {
@@ -858,7 +872,7 @@ int ompi_osc_rdma_rget_accumulate_internal (ompi_win_t *win, const void *origin_
     ompi_osc_rdma_module_t *module = GET_MODULE(win);
     mca_btl_base_registration_handle_t *target_handle;
     uint64_t target_address;
-    ptrdiff_t lb, target_lb, target_span;
+    ptrdiff_t target_lb, target_span;
     ompi_osc_rdma_request_t *rdma_request = NULL;
     bool lock_acquired = false;
     ompi_osc_rdma_sync_t *sync;
