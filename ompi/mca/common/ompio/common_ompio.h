@@ -87,7 +87,7 @@
 #define OMPIO_LOCK_SELECTIVE      11
 
 #define OMPIO_FCOLL_WANT_TIME_BREAKDOWN 0
-#define MCA_IO_DEFAULT_FILE_VIEW_SIZE 4*1024*1024
+#define MCA_IO_DEFAULT_FILE_VIEW_SIZE 6*1024*1024
 
 #define OMPIO_UNIFORM_DIST_THRESHOLD     0.5
 #define OMPIO_CONTG_THRESHOLD        1048576
@@ -157,6 +157,7 @@ struct ompio_file_t {
     int                    f_perm;
     ompi_communicator_t   *f_comm;
     const char            *f_filename;
+    char                  *f_fullfilename;
     char                  *f_datarep;
     opal_convertor_t      *f_mem_convertor;
     opal_convertor_t      *f_file_convertor;

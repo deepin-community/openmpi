@@ -9,7 +9,7 @@
  *                         and Technology (RIST).  All rights reserved.
  * Copyright (c) 2015      Los Alamos National Security, LLC. All rights
  *                         reserved.
- * Copyright (c) 2016-2017 IBM Corporation.  All rights reserved.
+ * Copyright (c) 2016-2022 IBM Corporation.  All rights reserved.
  * Copyright (c) 2018      FUJITSU LIMITED.  All rights reserved.
  * $COPYRIGHT$
  *
@@ -238,7 +238,7 @@ int ompi_coll_libnbc_ibcast(void *buffer, int count, MPI_Datatype datatype, int 
 static inline int bcast_sched_binomial(int rank, int p, int root, NBC_Schedule *schedule, void *buffer, int count, MPI_Datatype datatype) {
   int maxr, vrank, peer, res;
 
-  maxr = (int)ceil((log((double)p)/LOG2));
+  maxr = ceil_of_log2(p);
 
   RANK2VRANK(rank, vrank, root);
 
@@ -327,11 +327,11 @@ static inline int bcast_sched_chain(int rank, int p, int root, NBC_Schedule *sch
   fragcount = count/numfrag;
 
   for (int fragnum = 0 ; fragnum < numfrag ; ++fragnum) {
-    buf = (char *) buffer + fragnum * fragcount * ext;
+    buf = (char *) buffer + (MPI_Aint)ext * fragnum * fragcount;
     thiscount = fragcount;
     if (fragnum == numfrag-1) {
       /* last fragment may not be full */
-      thiscount = count - fragcount * fragnum;
+      thiscount = count - (size_t)fragcount * fragnum;
     }
 
     /* root does not receive */
