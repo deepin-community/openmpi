@@ -8,7 +8,7 @@ Copyright (c) 2004-2008 High Performance Computing Center Stuttgart,
                         University of Stuttgart.  All rights reserved.
 Copyright (c) 2004-2006 The Regents of the University of California.
                         All rights reserved.
-Copyright (c) 2006-2018 Cisco Systems, Inc.  All rights reserved.
+Copyright (c) 2006-2023 Cisco Systems, Inc.  All rights reserved.
 Copyright (c) 2006      Voltaire, Inc. All rights reserved.
 Copyright (c) 2006      Sun Microsystems, Inc.  All rights reserved.
                         Use is subject to license terms.
@@ -20,11 +20,12 @@ Copyright (c) 2012      Sandia National Laboratories.  All rights reserved.
 Copyright (c) 2012      University of Houston. All rights reserved.
 Copyright (c) 2013      NVIDIA Corporation.  All rights reserved.
 Copyright (c) 2013-2018 Intel, Inc. All rights reserved.
-Copyright (c) 2018-2021 Amazon.com, Inc. or its affiliates.  All Rights
+Copyright (c) 2018-2023 Amazon.com, Inc. or its affiliates.  All Rights
                         reserved.
 Copyright (c) 2019-2021 Triad National Security, LLC. All rights
                         reserved.
 Copyright (c) 2021      Google, LLC. All rights reserved.
+Copyright (c) 2023      Jeffrey M. Squyres.  All rights reserved.
 $COPYRIGHT$
 
 Additional copyrights may follow
@@ -58,9 +59,129 @@ included in the vX.Y.Z section and be denoted as:
    (** also appeared: A.B.C)  -- indicating that this item was previously
                                  included in release version vA.B.C.
 
-4.1.2 -- TBD
-------------
+4.1.6 -- September, 2023
+---------------------
 
+- Fix configure issue with XCode 15.
+- Update embedded PMIx to 3.2.5.  PMIx 3.2.5 addresses CVE-2023-41915.
+  Note that prior versions of Open MPI (and their associated PMIx
+  implementations) are not impacted by this CVE, because Open MPI
+  never uses escalated privileges on behalf of an unprivileged user.
+  We are backporting this change both because it is low risk and to
+  avoid alarms from CVE scanners.
+- Fix issue with buffered sends and MTL-based interfaces (Libfabric,
+  PSM, Portals).
+- Add missing MPI_F_STATUS_SIZE to mpi.h.  Thanks to @jprotze for
+  reporting the issue.
+- Update Fortran mpi module configure check to be more correct.
+  Thanks to Sergey Kosukhin for identifying the issue and supplying
+  the fix.
+- Update to properly handle PMIx v>=4.2.3.  Thanks to Bruno Chareyre,
+  Github user @sukanka, and Christof Koehler for raising the
+  compatibility issues and helping test the fixes.
+- Fix minor issues and add some minor performance optimizations with
+  OFI support.
+- Support the "striping_factor" and "striping_unit" MPI_Info names
+  recomended by the MPI standard for parallel IO.
+- Fixed some minor issues with UCX support.
+- Minor optimization for 0-byte MPI_Alltoallw (i.e., make it a no-op).
+
+
+4.1.5 -- February, 2023
+-----------------------
+
+- Fix crash in one-sided applications for certain process layouts.
+- Update embedded OpenPMIx to version 3.2.4
+- Fix issue building with ifort on MacOS.
+- Backport patches to Libevent for CVE-2016-10195, CVE-2016-10196, and
+  CVE-2016-10197.  Note that Open MPI's internal libevent does not
+  use the impacted portions of the Libevent code base.
+- SHMEM improvements:
+  - Fix initializer bugs in SHMEM interface.
+  - Fix unsigned type comparisons generating warnings.
+  - Fix use after clear issue in shmem_ds_reset.
+- UCX improvements
+  - Fix memory registration bug that could occur when UCX was built
+    but not selected.
+  - Reduce overhead of add_procs with intercommunicators.
+  - Enable multi_send_nb by default.
+  - Call opal_progress while waiting for a UCX fence to complete.
+- Fix data corruption bug in osc/rdma component.
+- Fix overflow bug in alltoall collective
+- Fix crash when displaying topology.
+- Add some MPI_F_XXX constants that were missing from mpi.h.
+- coll/ucc bug fixes.
+
+
+4.1.4 -- May, 2022
+------------------
+
+- Fix possible length integer overflow in numerous non-blocking collective
+  operations.
+- Fix segmentation fault in UCX if MPI Tool interface is finalized before
+  MPI_Init is called.
+- Remove /usr/bin/python dependency in configure.
+- Fix OMPIO issue with long double etypes.
+- Update treematch topology component to fix numerous correctness issues.
+- Fix memory leak in UCX MCA parameter registration.
+- Fix long operation closing file descriptors on non-Linux systems that
+  can appear as a hang to users.
+- Fix for attribute handling on GCC 11 due to pointer aliasing.
+- Fix multithreaded race in UCX PML's datatype handling.
+- Fix a correctness issue in CUDA Reduce algorithm.
+- Fix compilation issue with CUDA GPUDirect RDMA support.
+- Fix to make shmem_calloc(..., 0) conform to the OpenSHMEM specification.
+- Add UCC collectives component.
+- Fix divide by zero issue in OMPI IO component.
+- Fix compile issue with libnl when not in standard search locations.
+
+
+4.1.3 -- March, 2022
+--------------------
+
+- Fixed a seg fault in the smcuda BTL.  Thanks to Moritz Kreutzer and
+  @Stadik for reporting the issue.
+- Added support for ELEMENTAL to the MPI handle comparison functions
+  in the mpi_f08 module.  Thanks to Salvatore Filippone for raising
+  the issue.
+- Minor datatype performance improvements in the CUDA-based code paths.
+- Fix MPI_ALLTOALLV when used with MPI_IN_PLACE.
+- Fix MPI_BOTTOM handling for non-blocking collectives.  Thanks to
+  Lisandro Dalcin for reporting the problem.
+- Enable OPAL memory hooks by default for UCX.
+- Many compiler warnings fixes, particularly for newer versions of
+  GCC.
+- Fix intercommunicator overflow with large payload collectives.  Also
+  fixed MPI_REDUCE_SCATTER_BLOCK for similar issues with large payload
+  collectives.
+- Back-port ROMIO 3.3 fix to use stat64() instead of stat() on GPFS.
+- Fixed several non-blocking MPI collectives to not round fractions
+  based on float precision.
+- Fix compile failure for --enable-heterogeneous.  Also updated the
+  README to clarify that --enable-heterogeneous is functional, but
+  still not recomended for most environments.
+- Minor fixes to OMPIO, including:
+  - Fixing the open behavior of shared memory shared file pointers.
+    Thanks to Axel Huebl for reporting the issue
+  - Fixes to clean up lockfiles when closing files.  Thanks to Eric
+    Chamberland for reporting the issue.
+- Update LSF configure failure output to be more clear (e.g., on RHEL
+  platforms).
+- Update if_[in|ex]clude behavior in btl_tcp and oob_tcp to select
+  *all* interfaces that fall within the specified subnet range.
+
+
+4.1.2 -- November, 2021
+-----------------------
+
+- ROMIO portability fix for OpenBSD
+- Fix handling of MPI_IN_PLACE with MPI_ALLTOALLW and improve performance
+  of MPI_ALLTOALL and MPI_ALLTOALLV for MPI_IN_PLACE.
+- Fix one-sided issue with empty groups in Post-Start-Wait-Complete
+  synchronization mode.
+- Fix Fortran status returns in certain use cases involving
+  Generalized Requests
+- Romio datatype bug fixes.
 - Fix oshmem_shmem_finalize() when main() returns non-zero value.
 - Fix wrong affinity under LSF with the membind option.
 - Fix count==0 cases in MPI_REDUCE and MPI_IREDUCE.
@@ -73,7 +194,7 @@ included in the vX.Y.Z section and be denoted as:
 - Fix a potential hang in the memory hook handling.
 - Slight performance improvement in MPI_WAITALL when running in
   MPI_THREAD_MULTIPLE.
-- Fix hcoll datatype mapping.
+- Fix hcoll datatype mapping and rooted operation behavior.
 - Correct some operations modifying MPI_Status.MPI_ERROR when it is
   disallowed by the MPI standard.
 - UCX updates:
@@ -115,7 +236,9 @@ included in the vX.Y.Z section and be denoted as:
   - Fixed segv with MPI_FILE_GET_BYTE_OFFSET on 0-sized file view.
   - Thanks to GitHub user @shanedsnyder for submitting the issue.
 - OFI updates:
-  - Add support for Libfabric memhooks monitoring.
+  - Multi-plane / Multi-Nic nic selection cleanups
+  - Add support for exporting Open MPI memory monitors into
+    Libfabric.
   - Ensure that Cisco usNIC devices are never selected by the OFI
     MTL.
   - Fix buffer overflow in OFI networking setup.  Thanks to Alexander
@@ -245,10 +368,43 @@ included in the vX.Y.Z section and be denoted as:
 - OFI/libfabric: Multiple small bugfixes
 - libnbc: Adding numerous performance-improving algorithms
 
-4.0.6 -- March, 2021
+4.0.7 -- November, 2021
 -----------------------
-- Update embedded PMIx to 3.2.2.  This update addresses several
+
+- Fix an issue with MPI_IALLREDUCE_SCATTER when using large count
+  arguments.
+- Fixed an issue with POST/START/COMPLETE/WAIT when using subsets
+  of processes.  Thanks to Thomas Gilles for reporting.
+- Numerous fixes from vendor partners.
+- Fix a problem with a couple of MPI_IALLREDUCE algorithms.  Thanks to
+  John Donners for reporting.
+- Fix an edge case where MPI_Reduce is invoked with zero count and NULL
+  source and destination buffers.
+- Use the mfence instruction in opal_atomic_rmb on x86_64 cpus.  Thanks
+  to George Katevenis for proposing a fix.
+- Fix an issue with the Open MPI build system using the SLURM provided
+  PMIx when not requested by the user.  Thanks to Alexander Grund for
+  reporting.
+- Fix a problem compiling Open MPI with clang on case-insensitive
+  file systems.  Thanks to @srpgilles for reporting.
+- Fix some OFI usNIC/OFI MTL interaction problems.  Thanks to
+  @roguephysicist reporting this issue.
+- Fix a problem with the Posix fbtl component failing to load.
+  Thanks to Honggang Li for reporting.
+
+4.0.6 -- June, 2021
+-------------------
+
+- Update embedded PMIx to 3.2.3.  This update addresses several
   MPI_COMM_SPAWN problems.
+- Fix an issue with MPI_FILE_GET_BYTE_OFFSET when supplying a
+  zero size file view.  Thanks to @shanedsnyder for reporting.
+- Fix an issue with MPI_COMM_SPLIT_TYPE not observing key correctly.
+  Thanks to Wolfgang Bangerth for reporting.
+- Fix a derived datatype issue that could lead to potential data
+  corruption when using UCX.  Thanks to @jayeshkrishna for reporting.
+- Fix a problem with shared memory transport file name collisions.
+  Thanks to Moritz Kreutzer for reporting.
 - Fix a problem when using Flux PMI and UCX.  Thanks to Sami Ilvonen
   for reporting and supplying a fix.
 - Fix a problem with MPIR breakpoint being compiled out using PGI
