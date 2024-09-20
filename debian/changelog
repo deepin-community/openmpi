@@ -1,3 +1,9 @@
+openmpi (4.1.6-5deepin0) unstable; urgency=medium
+
+  * No source change upload against GCC 12.
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Fri, 20 Sep 2024 12:15:06 +0800
+
 openmpi (4.1.6-5) unstable; urgency=medium
 
   * Ensure pkg-config is present for autopkgtests
